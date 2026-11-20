@@ -1,274 +1,95 @@
-# cPanel IP License Check
+# cPanel IP License Check (`cpipcheck`)
 
-Readme: [BR](README-ptbr.md)
+Readme: [PT-BR](README-ptbr.md)
 
 ![License](https://img.shields.io/github/license/sr00t3d/cpipcheck) ![Shell Script](https://img.shields.io/badge/language-Bash-green.svg)
 
-<img width="700" src="cpipcheck-cover-webp" />
+<img width="700" alt="cPanel IP License Check" src="cpipcheck-cover.webp" />
 
-A modern Bash utility to check cPanel/WHM license information, updated for the current verify.cpanel.net API structure.
+A fast, reliable Bash + Python3 (stdlib) CLI utility to verify **cPanel/WHM**, **LiteSpeed**, **CloudLinux**, and partner licenses by IPv4 directly against `https://verify.cpanel.net/app/verify`. Supports single IP, multi-IP lists, batch files (`-f`), automatic public IP detection (`--self`), full historical records (`--history`), reverse DNS (PTR), structured `table`/`json`/`csv` output, and automation-ready exit codes.
 
-## About
+## Features (v2.0.0)
 
-This project is an **updated version** of the original license checker by **Percio Andrade**. The original script used an older API endpoint (`http://verify.cpanel.net/index.cgi`) that has been deprecated.
+* **Resilient HTMLParser Engine:** Parses every license row in `<table class="history table">` (including multiple active add-on licenses like `LiteSpeed`, `CloudLinux`, `Imunify360`) without fragile regex/sed chains.
+* **Single, Multi-IP, Batch File & `--self`:** Pass one or more IPs on the command line, load a list with `-f servers.txt`, or auto-detect the current server's public IPv4 with `--self`.
+* **License History Mode (`-H, --history`):** Displays expired/historical license records alongside active ones.
+* **Reverse DNS (PTR) without Extra Packages:** Resolves PTR hostnames natively via Python `socket.gethostbyaddr` (no `bind-utils`/`dnsutils` required).
+* **Structured Output (`-o table|json|csv`):** Ready for NOC terminals, Zabbix, Prometheus, SIEMs, or billing reconciliation scripts.
+* **Semantic Exit Codes:** `0` = all checked IPs have an active license, `1` = runtime/network error, `2` = one or more IPs are expired or unlicensed.
 
-### Why an Update?
+## Prerequisites
 
-- **New API endpoint** - Updated from `index.cgi` to `app/verify`
-- **HTTPS support** - Secure connections (original used HTTP)
-- **New HTML structure** - Parse modern verify.cpanel.net layout
-- **Better error handling** - Validates responses and handles edge cases
-- **No grep lookbehind** - Compatible with standard Unix tools
+* `bash` 4.0+
+* `python3` (standard library only — zero `pip` packages)
+* `curl` (required only when using `--self`)
 
-## Features
+## Usage & Options
 
-| Feature | Description | Original | This Version |
-|---------|-------------|----------|--------------|
-| License verification | Query cPanel license server | ✅ | ✅ |
-| HTTPS support | Secure API calls | ❌ | ✅ |
-| Modern API | Current verify.cpanel.net structure | ❌ | ✅ |
-| Hostname resolution | Reverse DNS lookup | ✅ | ✅ |
-| Color output | Terminal colors for readability | ❌ | ✅ |
-| IP validation | Validate input format | ❌ | ✅ |
-| Error handling | Graceful failure handling | ❌ | ✅ |
-| Exit codes | Return 0 for active, 1 for inactive | ❌ | ✅ |
+```text
+cPanel IP License Check (cpipcheck) v2.0.0
+Verifies cPanel/WHM and partner licenses by IPv4 via verify.cpanel.net.
 
-## Requirements
+Usage:
+  cpipcheck.sh [OPTIONS] <IP> [IP2 ...]
+  cpipcheck.sh --self [OPTIONS]
+  cpipcheck.sh -f <ips.txt> [OPTIONS]
 
-- **Bash** 4.0+
-- **curl** - for HTTPS requests
-- **host** - for DNS resolution (bind-utils package)
-- Standard Unix tools: `grep`, `sed`, `awk`, `tr`
+Options:
+      --self                Auto-detect and verify this server's public IPv4
+  -f, --file <path>         Read IPv4 addresses (one per line, # comments ignored)
+  -H, --history             Include expired/historical license records
+  -o, --output <fmt>        Output format: table (default), json, csv
+  -t, --timeout <sec>       HTTP timeout in seconds (default: 10)
+  -q, --quiet               Suppress progress messages
+      --no-color            Disable ANSI colors
+```
 
-## Installation
+## Practical Examples
 
+**Check a single IPv4:**
 ```bash
-# Clone or download
-curl -O https://raw.githubusercontent.com/sr00t3d/cpipcheck/refs/heads/main/cpipcheck.sh
-
-# Make executable
-chmod +x cpipcheck.sh
-
-# Optional: move to PATH
-sudo mv cpipcheck.sh /usr/local/bin/cpcheck
+./cpipcheck.sh 208.74.123.68
 ```
 
-## Usage
-
+**Include expired/historical licenses:**
 ```bash
-cpipcheck.sh <IP_ADDRESS>
+./cpipcheck.sh --history 208.74.123.68
 ```
 
-### Arguments
-
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `IP_ADDRESS` | Server IP to check | Yes |
-
-## Examples
-
-### 1. Check Active License
-
+**Verify the current server's public IP and export JSON:**
 ```bash
-./cpipcheck.sh 127.0.0.1
+./cpipcheck.sh --self -o json
 ```
 
-**Output:**
+**Audit a fleet of IPs from a file and export CSV:**
 ```bash
-═══════════════════════════════════════════════════════════════
-              cPanel License Verification
-═══════════════════════════════════════════════════════════════
-
-  IP Address:        127.0.0.1
-  Hostname:          server.tld
-
-───────────────────────────────────────────────────────────────
-  License Details:
-───────────────────────────────────────────────────────────────
-  Package:           cPanel Autoscale Cloud (Internal)
-  Product:           cPanel/WHM
-  Partner NOC:       Company, LTDA.
-  Status:            ✓ active
-  Activity:          active on 2025-07-01 12:02:09
-  Updates Expire:    N/A
-───────────────────────────────────────────────────────────────
+./cpipcheck.sh -f servers.txt -o csv > licenses.csv
 ```
 
-### 2. Check Without Arguments
+## Real Output Example
 
-```bash
-./cpipcheck.sh
+```text
+================================================================================================================
+ CPANEL IP LICENSE CHECK (cpipcheck) v2.0.0 | 2026-11-20 03:04:04 UTC
+================================================================================================================
+IP ADDRESS       | PRODUCT        | PACKAGE                    | PARTNER NOC        | STATUS             | PTR HOSTNAME
+----------------------------------------------------------------------------------------------------------------
+208.74.123.68    | LiteSpeed      | LITESPEED-UNLIMITED        | cPanel, L.L.C.     | active             | N/A
+208.74.123.68    | cPanel/WHM     | CPANEL-SERVERS-INTERNAL    | cPanel, L.L.C.     | expired on 2026-08 | N/A
+================================================================================================================
+ Summary: 1 IP(s) checked | Active: 1 | Inactive/Unlicensed: 0
+================================================================================================================
 ```
-
-**Output:**
-```bash
-Usage: ./cpipcheck.sh <IP_ADDRESS>
-Example: ./cpipcheck.sh 127.0.0.1
-```
-
-### 3. Invalid IP Format
-
-```bash
-./cpipcheck.sh invalid-ip
-```
-
-**Output:**
-```bash
-Error: Invalid IP address format
-```
-
-### 4. No License Found
-
-```bash
-./cpipcheck.sh 192.168.1.1
-```
-
-**Output:**
-```bash
-No license found for IP 192.168.1.1
-```
-
-## Output Format
-
-### Color Coding
-
-| Color | Meaning |
-|-------|---------|
-| 🟢 Green | Active status |
-| 🔴 Red | Inactive/expired status |
-| 🟡 Yellow | Labels and headers |
-| 🔵 Blue | Borders and separators |
-| Cyan | IP and hostname values |
-
-### Status Indicators
-
-| Symbol | Status |
-|--------|--------|
-| `✓` | Active license |
-| `✗` | Inactive/expired license |
-
-### Fields Explained
-
-| Field | Description | Example |
-|-------|-------------|---------|
-| **IP Address** | The IP checked | `127.0.0.1` |
-| **Hostname** | Reverse DNS lookup | `server.tld` |
-| **Package** | License type | `cPanel Autoscale Cloud (Internal)` |
-| **Product** | cPanel product | `cPanel/WHM` |
-| **Partner NOC** | License provider | `Company, LTDA.` |
-| **Status** | Current status | `active` or `expired` |
-| **Activity** | Activation date | `active on 2025-07-01 12:02:09` |
-| **Updates Expire** | Update expiration | `N/A` or date |
-
-## Exit Codes
-
-| Code | Meaning | Use Case |
-|------|---------|----------|
-| `0` | License is **active** | Success in scripts |
-| `1` | License **inactive/expired** or **error** | Alert in monitoring |
-
-### Use in Scripts
-
-```bash
-# Check license and alert if not active
-if ! ./cpipcheck.sh 127.0.0.1 > /dev/null 2>&1; then
-    echo "ALERT: cPanel license not active!" | mail -s "License Alert" admin@example.com
-fi
-```
-
-```bash
-# One-liner status check
-./cpipcheck.sh 127.0.0.1 > /dev/null && echo "License OK" || echo "License PROBLEM"
-```
-
-## Comparison with Original
-
-| Aspect | Original (v1.0) | This Version (v2.3) |
-|--------|-----------------|---------------------|
-| API Endpoint | `http://verify.cpanel.net/index.cgi` | `https://verify.cpanel.net/app/verify` |
-| Protocol | HTTP (insecure) | HTTPS (secure) |
-| HTML Parser | Simple grep/cut | Awk + array mapping |
-| IP validation | None | Regex validation |
-| Error handling | Basic | Comprehensive |
-| Color output | None | Full color support |
-| Exit codes | None | 0=active, 1=inactive |
-| Hostname lookup | Yes | Yes |
-| Modern structure | No | Yes |
-
-## Troubleshooting
-
-### "command not found: host"
-```bash
-# Install bind-utils
-yum install bind-utils      # CentOS/RHEL
-apt-get install dnsutils    # Ubuntu/Debian
-```
-
-### "No license found for IP"
-- The IP has no cPanel license associated
-- Verify the IP address is correct
-- Check if license is registered at [verify.cpanel.net](https://verify.cpanel.net)
-
-### "Error: No response from cPanel license server"
-- Network connectivity issue
-- verify.cpanel.net may be down
-- Check firewall/proxy settings
-
-### Empty fields in output
-The HTML structure may have changed. Debug with:
-```bash
-curl -s "https://verify.cpanel.net/app/verify?ip=YOUR_IP" > /tmp/debug.html
-grep -A 20 'class="history table"' /tmp/debug.html
-```
-
-## API Information
-
-### Current Endpoint
-```
-https://verify.cpanel.net/app/verify?ip=<IP_ADDRESS>
-```
-
-### Response Format
-HTML table with license history:
-```html
-<table class="history table">
-    <tr class="status1">
-        <td align="center">1</td>
-        <td align="center">IP_ADDRESS</td>
-        <td align="center">PACKAGE</td>
-        <td align="left">PARTNER_NOC</td>
-        <td align="center">ACTIVITY</td>
-        <td align="center">PRODUCT</td>
-        <td><b>STATUS</b></td>
-        <td>UPDATES_EXPIRATION</td>
-    </tr>
-</table>
-```
-
-## Credits
-
-- **Original Author**: Percio Andrade
-- **Original Version**: 1.0
-- **Updated Version**: 2.3 (2026)
-- **Purpose**: cPanel license verification tool
-
-
-## Legal Notice
-
-> [!WARNING]
-> This software is provided "as is." Always ensure you have explicit permission before executing it. The author is not responsible for any misuse, legal consequences, or data impact caused by this tool.
 
 ## Detailed Tutorial
 
-For a complete, step-by-step guide, check out my full article:
-
-👉 [**Change IP Account on cPanel**](https://perciocastelo.com.br/blog/check-license-cpanel-in-cli.html)
+Read the full walkthrough: [**Check cPanel License in CLI**](https://perciocastelo.com.br/blog/check-license-cpanel-in-cli.html)
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
-
-**Note**: This script is for administrative purposes only. Respect cPanel's terms of service and rate limits when using their verification API.
-```
+Author: **Percio Castelo**  
+Contact: [contato@perciocastelo.com.br](mailto:contato@perciocastelo.com.br)  
+Website: [https://perciocastelo.com.br](https://perciocastelo.com.br)
