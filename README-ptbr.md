@@ -72,3 +72,14 @@ Este projeto é distribuído sob a licença [Apache License 2.0](LICENSE).
 Autor: **Percio Castelo**  
 Contato: [contato@perciocastelo.com.br](mailto:contato@perciocastelo.com.br)  
 Website: [https://perciocastelo.com.br](https://perciocastelo.com.br)
+
+## Windows (PowerShell `cpipcheck.ps1`)
+
+Zero dependências externas — funciona nativamente no **Windows PowerShell 5.1** e **PowerShell 7+** (não precisa rodar dentro de servidor cPanel):
+
+```powershell
+.\cpipcheck.ps1 208.74.121.53
+.\cpipcheck.ps1 208.74.121.53 -History
+.\cpipcheck.ps1 -Self -Output json
+.\cpipcheck.ps1 -File ips.txt -Output csv
+```
