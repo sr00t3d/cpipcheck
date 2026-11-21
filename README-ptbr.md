@@ -45,6 +45,27 @@ Utilitário CLI rápido e confiável em Bash + Python3 (biblioteca padrão) para
 ./cpipcheck.sh -f servers.txt -o csv > licenses.csv
 ```
 
+## Execução Direta & Windows PowerShell
+
+### Linux / macOS (Execução Direta)
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/sr00t3d/cpipcheck/main/cpipcheck.sh) 208.74.121.53
+```
+
+### Windows (PowerShell `cpipcheck.ps1`)
+Zero dependências externas — compatível com **Windows PowerShell 5.1+** e **PowerShell 7+**:
+
+```powershell
+# Execução direta (sem clonar)
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/sr00t3d/cpipcheck/main/cpipcheck.ps1))) 208.74.121.53
+
+# Execução local
+.\cpipcheck.ps1 208.74.121.53
+.\cpipcheck.ps1 208.74.121.53 -History
+.\cpipcheck.ps1 -Self -Output json
+.\cpipcheck.ps1 -File ips.txt -Output csv
+```
+
 ## Exemplo de Saída Real
 
 ```text
@@ -72,14 +93,3 @@ Este projeto é distribuído sob a licença [Apache License 2.0](LICENSE).
 Autor: **Percio Castelo**  
 Contato: [contato@perciocastelo.com.br](mailto:contato@perciocastelo.com.br)  
 Website: [https://perciocastelo.com.br](https://perciocastelo.com.br)
-
-## Windows (PowerShell `cpipcheck.ps1`)
-
-Zero dependências externas — funciona nativamente no **Windows PowerShell 5.1** e **PowerShell 7+** (não precisa rodar dentro de servidor cPanel):
-
-```powershell
-.\cpipcheck.ps1 208.74.121.53
-.\cpipcheck.ps1 208.74.121.53 -History
-.\cpipcheck.ps1 -Self -Output json
-.\cpipcheck.ps1 -File ips.txt -Output csv
-```

@@ -66,6 +66,27 @@ Options:
 ./cpipcheck.sh -f servers.txt -o csv > licenses.csv
 ```
 
+## Direct Execution & Windows PowerShell
+
+### Linux / macOS (Direct Execution)
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/sr00t3d/cpipcheck/main/cpipcheck.sh) 208.74.121.53
+```
+
+### Windows (PowerShell `cpipcheck.ps1`)
+Zero external dependencies — works natively on **Windows PowerShell 5.1+** and **PowerShell 7+**:
+
+```powershell
+# Direct execution (no clone required)
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/sr00t3d/cpipcheck/main/cpipcheck.ps1))) 208.74.121.53
+
+# Local execution
+.\cpipcheck.ps1 208.74.121.53
+.\cpipcheck.ps1 208.74.121.53 -History
+.\cpipcheck.ps1 -Self -Output json
+.\cpipcheck.ps1 -File ips.txt -Output csv
+```
+
 ## Real Output Example
 
 ```text
@@ -93,14 +114,3 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 Author: **Percio Castelo**  
 Contact: [contato@perciocastelo.com.br](mailto:contato@perciocastelo.com.br)  
 Website: [https://perciocastelo.com.br](https://perciocastelo.com.br)
-
-## Windows (PowerShell `cpipcheck.ps1`)
-
-Zero external dependencies — works natively on **Windows PowerShell 5.1** and **PowerShell 7+** (no cPanel server required):
-
-```powershell
-.\cpipcheck.ps1 208.74.121.53
-.\cpipcheck.ps1 208.74.121.53 -History
-.\cpipcheck.ps1 -Self -Output json
-.\cpipcheck.ps1 -File ips.txt -Output csv
-```
